@@ -1,6 +1,6 @@
 #represente mon objet application 
 from fastapi import FastAPI, Form, Header, Depends, HTTPException
-from fastapi.security import HTTPBasicCredentials, HTTPBasic, OAuth2PasswordRequestForm
+from fastapi.security import HTTPBasicCredentials, HTTPBasic, OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from user_model import UserModel
 from loginCredentials import CredentialsLogin
 from document_model import DocumentModel
@@ -54,3 +54,14 @@ def login_token(credentials: Annotated[OAuth2PasswordRequestForm, Depends()]):
     
     token = jwt.encode({"username": "plop", "email": "plop@gmail.com", "exp": datetime.now()+timedelta(hours=1) }, SECRET_KEY, algorithm="HS256")
     return {"access_token": token}
+
+def valide_token(token: Annotated[str, Depends(OAuth2PasswordBearer(tokenUrl='/login/token'))]): 
+    try: 
+        data = jwt.decode(token, SECRET_KEY, algorithms='HS256')
+        return str(data["username"])
+    except jwt.DecodeError: 
+        raise HTTPException(status_code=401, detail="invalid token") 
+
+@app.get('/token/users/{username}')
+def user_detail(username: str, token: Annotated[str, Depends(valide_token)]): 
+    return {"username": username}
