@@ -1,5 +1,5 @@
 #represente mon objet application 
-from fastapi import FastAPI, Form, Header, Depends, HTTPException
+from fastapi import FastAPI, Form, Header, Depends, HTTPException, UploadFile, File
 from fastapi.security import HTTPBasicCredentials, HTTPBasic, OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from user_model import UserModel
 from loginCredentials import CredentialsLogin
@@ -62,6 +62,10 @@ def valide_token(token: Annotated[str, Depends(OAuth2PasswordBearer(tokenUrl='/l
     except jwt.DecodeError: 
         raise HTTPException(status_code=401, detail="invalid token") 
 
-@app.get('/token/users/{username}')
-def user_detail(username: str, token: Annotated[str, Depends(valide_token)]): 
+@app.get('/token/users/{username}' , dependencies=[Depends(valide_token)])
+def user_detail(username: str): 
     return {"username": username}
+
+@app.post('/upload/file')
+def upload_file(file: Annotated[UploadFile,File()]): 
+    return {"file": file.filename, "size": file.size, "content_type": file.content_type}
