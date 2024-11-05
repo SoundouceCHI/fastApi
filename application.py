@@ -1,12 +1,19 @@
 #represente mon objet application 
 from fastapi import FastAPI, Form, Header, Depends, HTTPException
-from fastapi.security import HTTPBasicCredentials, HTTPBasic
+from fastapi.security import HTTPBasicCredentials, HTTPBasic, OAuth2PasswordRequestForm
 from user_model import UserModel
 from loginCredentials import CredentialsLogin
 from document_model import DocumentModel
 from typing import Annotated
+import jwt
+import dotenv 
+from os import environ 
+from datetime import datetime, timedelta
 
-app =FastAPI() 
+app =FastAPI()
+
+dotenv.load_dotenv()
+SECRET_KEY = environ['SECRET_KEY']
 
 @app.get('/')
 def welcome_page(user_agent: Annotated[str, Header()]): 
@@ -39,3 +46,11 @@ def login_form_basic(creadentials: Annotated[HTTPBasicCredentials, Depends(HTTPB
     if not (creadentials.username == 'plop' and creadentials.password == 'plop'): 
         raise HTTPException(status_code=401, detail='invalid username or password')
     return {"username": creadentials.username, "password": creadentials.password}
+
+@app.post('/login/token')
+def login_token(credentials: Annotated[OAuth2PasswordRequestForm, Depends()]): 
+    if not (credentials.username == 'plop' and credentials.password == 'plop'): 
+        raise HTTPException(status_code=401, detail="invalid password or username")
+    
+    token = jwt.encode({"username": "plop", "email": "plop@gmail.com", "exp": datetime.now()+timedelta(hours=1) }, SECRET_KEY, algorithm="HS256")
+    return {"access_token": token}
